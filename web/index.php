@@ -24,33 +24,43 @@
 			if(file_exists($file))
 			{
 				// On lit le fichier
-				$fp=fopen($log,'r');
-				$line=fgets($fp,500);
-				$titre=$line;
-
-				while(!feof($fp))
-				{
-					$line2=$line;
-					$line=fgets($fp,44);
-				}
-				fclose($fp);
+				$content=file($log);
 
 				// On extrait les informations qui nous intéressent
-				$titre=trim($titre);
-				$info=stat($titre);
+				$titre=trim($content[0]);
 
+				$info=stat($titre);
 				$taille=$info[7];
 				$taille=$taille/1024;
 				$taille=$taille/1024;				
-
 				$titre=preg_replace('/^\/.*\//','',$titre);
+
 				$line2=preg_replace('/^[\s]+/','',$line2);
+
 				$info=preg_split('/[\s]+/',$line2);
 
-				$data=$info[0];
-				$percentage=$info[1];
-				$vitesse=$info[2];
-				$eta=$info[3];
+				$rsync_log = $content[count($content) -1]; // On recupère la dernière ligne
+				$rsync_array = explode(chr(13),$rsync_log);			
+				$last_entry = $rsync_array[count($rsync_array)- 1];
+				$info=preg_replace('/^[\s]+/','',$last_entry);
+				$infotab=preg_split('/[\s]+/',$info);
+				
+				$data=$infotab[0];
+				$percentage=$infotab[1];
+				$vitesse=$infotab[2];
+				$eta=$infotab[3];
+				
+				// Si l'entrée est imcomplète on prend la précédente.
+				if (($data == "") or ($percentage == "") or ($vitesse == "") or ($eta == "")){
+					$last_entry = $rsync_array[count($rsync_array)- 2];
+					$info=preg_replace('/^[\s]+/','',$last_entry);
+					$infotab=preg_split('/[\s]+/',$info);
+					
+					$data=$infotab[0];
+					$percentage=$infotab[1];
+					$vitesse=$infotab[2];
+					$eta=$infotab[3];				
+				}
 
 				echo $titre; // On affiche le nom du fichier en cours de synchro
 				
